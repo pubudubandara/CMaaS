@@ -1,0 +1,6 @@
+@CMaaS.Backend_HostAddress = http://localhost:5130
+
+GET {{CMaaS.Backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
