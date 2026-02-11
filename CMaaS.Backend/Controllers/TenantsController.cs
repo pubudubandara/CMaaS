@@ -1,7 +1,6 @@
-﻿using CMaaS.Backend.Data;
+﻿using CMaaS.Backend.Models;
+using CMaaS.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using CMaaS.Backend.Models;
 
 namespace CMaaS.Backend.Controllers
 {
@@ -9,39 +8,46 @@ namespace CMaaS.Backend.Controllers
     [ApiController]
     public class TenantsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly ITenantService _tenantService;
 
-        // Constructor to inject the AppDbContext
-        public TenantsController(AppDbContext context)
+        public TenantsController(ITenantService tenantService)
         {
-            _context = context;
+            _tenantService = tenantService;
         }
 
-        //Get All Tenants (GET: api/tenants)
+        /// <summary>
+        /// Get all tenants
+        /// </summary>
+        /// <returns>List of all tenants</returns>
         [HttpGet]
         public async Task<IActionResult> GetAllTenants()
         {
-            // Fetch all tenants from the database
-            var tenants = await _context.Tenants.ToListAsync();
-            return Ok(tenants);
-        }
+            var result = await _tenantService.GetAllTenantsAsync();
 
-        //Create a new tenant (POST: api/tenants)
-        [HttpPost]
-        public async Task<IActionResult> CreateTenant([FromBody] Tenant tenant)
-        {   
-            //validation
-            if(string.IsNullOrEmpty(tenant.Name))
+            if (!result.IsSuccess)
             {
-                return BadRequest("Tenant name is required.");
+                return BadRequest(result.ErrorMessage);
             }
 
-            //save tenant to database
-            _context.Tenants.Add(tenant);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetAllTenants), new { id = tenant.Id }, tenant);
+            return Ok(result.Data);
         }
 
+        /// <summary>
+        /// Create a new tenant
+        /// </summary>
+        /// <param name="tenant">Tenant to create</param>
+        /// <returns>Created tenant</returns>
+        [HttpPost]
+        public async Task<IActionResult> CreateTenant([FromBody] Tenant tenant)
+        {
+            var result = await _tenantService.CreateTenantAsync(tenant);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.ErrorMessage);
+            }
+
+            return CreatedAtAction(nameof(GetAllTenants), new { id = result.Data!.Id }, result.Data);
+        }
     }
 }
