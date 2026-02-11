@@ -12,7 +12,8 @@ namespace CMaaS.Backend.Data
         public DbSet<Tenant> Tenants { get; set; }
         public DbSet<ContentType> ContentTypes { get; set; }
         public DbSet<ContentEntry> ContentEntries { get; set; }
+        public DbSet<User> Users { get; set; }
 
 
-    }
+        }
 }
