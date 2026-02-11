@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CMaaS.Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260211034559_AddContentTables")]
-    partial class AddContentTables
+    [Migration("20260211143155_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -101,6 +101,39 @@ namespace CMaaS.Backend.Migrations
                     b.ToTable("Tenants");
                 });
 
+            modelBuilder.Entity("CMaaS.Backend.Models.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("CMaaS.Backend.Models.ContentEntry", b =>
                 {
                     b.HasOne("CMaaS.Backend.Models.ContentType", "ContentType")
@@ -113,6 +146,17 @@ namespace CMaaS.Backend.Migrations
                 });
 
             modelBuilder.Entity("CMaaS.Backend.Models.ContentType", b =>
+                {
+                    b.HasOne("CMaaS.Backend.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("CMaaS.Backend.Models.User", b =>
                 {
                     b.HasOne("CMaaS.Backend.Models.Tenant", "Tenant")
                         .WithMany()
