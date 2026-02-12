@@ -9,36 +9,40 @@ namespace CMaaS.Backend.Services.Implementations
     public class ContentEntryService : IContentEntryService
     {
         private readonly AppDbContext _context;
+        private readonly IUserContextService _userContext;
 
-        public ContentEntryService(AppDbContext context)
+        public ContentEntryService(AppDbContext context, IUserContextService userContext)
         {
             _context = context;
+            _userContext = userContext;
         }
 
         public async Task<ServiceResult<ContentEntry>> CreateEntryAsync(ContentEntry entry)
         {
-            // Validation
             if (entry == null)
             {
-                return ServiceResult<ContentEntry>.Failure("ContentEntry is required.");
+                throw new ArgumentException("ContentEntry is required.");
             }
 
             if (entry.Data == null)
             {
-                return ServiceResult<ContentEntry>.Failure("Data is required.");
+                throw new ArgumentException("Data is required.");
             }
 
             if (entry.ContentTypeId == 0)
             {
-                return ServiceResult<ContentEntry>.Failure("ContentTypeId is required.");
+                throw new ArgumentException("ContentTypeId is required.");
             }
 
             // Verify content type exists
             var contentType = await _context.ContentTypes.FindAsync(entry.ContentTypeId);
             if (contentType == null)
             {
-                return ServiceResult<ContentEntry>.Failure("Invalid ContentTypeId.");
+                throw new KeyNotFoundException("Invalid ContentTypeId.");
             }
+
+            // Set tenant ID from current user
+            entry.TenantId = _userContext.GetTenantId() ?? 0;
 
             try
             {
@@ -49,33 +53,32 @@ namespace CMaaS.Backend.Services.Implementations
             }
             catch (Exception ex)
             {
-                return ServiceResult<ContentEntry>.Failure($"Failed to create entry: {ex.Message}");
+                throw new Exception($"Failed to create entry: {ex.Message}");
             }
         }
 
         public async Task<ServiceResult<PaginatedResultDto<ContentEntry>>> GetEntriesByTypeAsync(int contentTypeId, FilterDto filter)
         {
-            // Validation
             if (contentTypeId <= 0)
             {
-                return ServiceResult<PaginatedResultDto<ContentEntry>>.Failure("Invalid ContentTypeId.");
+                throw new ArgumentException("Invalid ContentTypeId.");
             }
 
             if (filter.Page <= 0)
             {
-                return ServiceResult<PaginatedResultDto<ContentEntry>>.Failure("Page must be greater than 0.");
+                throw new ArgumentException("Page must be greater than 0.");
             }
 
             if (filter.PageSize <= 0)
             {
-                return ServiceResult<PaginatedResultDto<ContentEntry>>.Failure("PageSize must be greater than 0.");
+                throw new ArgumentException("PageSize must be greater than 0.");
             }
 
             try
             {
                 // Get all entries for the content type from database
                 var allEntries = await _context.ContentEntries
-                                    .Where(e => e.ContentTypeId == contentTypeId)
+                                    .Where(e => e.ContentTypeId == contentTypeId && e.TenantId == _userContext.GetTenantId())
                                     .ToListAsync();
 
                 // Apply search filter in memory (client-side)
@@ -109,7 +112,7 @@ namespace CMaaS.Backend.Services.Implementations
             }
             catch (Exception ex)
             {
-                return ServiceResult<PaginatedResultDto<ContentEntry>>.Failure($"Failed to retrieve entries: {ex.Message}");
+                throw new Exception($"Failed to retrieve entries: {ex.Message}");
             }
         }
 
@@ -117,23 +120,63 @@ namespace CMaaS.Backend.Services.Implementations
         {
             if (id <= 0)
             {
-                return ServiceResult<ContentEntry>.Failure("Invalid entry ID.");
+                throw new ArgumentException("Invalid entry ID.");
             }
 
             try
             {
-                var entry = await _context.ContentEntries.FindAsync(id);
+                var entry = await _context.ContentEntries
+                    .Where(e => e.Id == id && e.TenantId == _userContext.GetTenantId())
+                    .FirstOrDefaultAsync();
                 
                 if (entry == null)
                 {
-                    return ServiceResult<ContentEntry>.Failure("ContentEntry not found.");
+                    throw new KeyNotFoundException("ContentEntry not found.");
                 }
 
                 return ServiceResult<ContentEntry>.Success(entry);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not ArgumentException && ex is not KeyNotFoundException)
             {
-                return ServiceResult<ContentEntry>.Failure($"Failed to retrieve entry: {ex.Message}");
+                throw new Exception($"Failed to retrieve entry: {ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResult<bool>> DeleteEntryAsync(int id)
+        {
+            if (id <= 0)
+            {
+                throw new ArgumentException("Invalid entry ID.");
+            }
+
+            try
+            {
+                var entry = await _context.ContentEntries
+                    .Where(e => e.Id == id && e.TenantId == _userContext.GetTenantId())
+                    .FirstOrDefaultAsync();
+                if (entry == null)
+                {
+                    throw new KeyNotFoundException("ContentEntry not found.");
+                }
+
+                // Get the Tenant ID of the currently logged-in user
+                var currentTenantId = _userContext.GetTenantId();
+                var userRole = _userContext.GetUserRole();
+
+                // Even if user is Admin, they cannot delete data from other tenants
+                if (userRole == "Admin" && entry.TenantId != currentTenantId)
+                {
+                    throw new UnauthorizedAccessException("You can only delete your own data!");
+                }
+
+                _context.ContentEntries.Remove(entry);
+                await _context.SaveChangesAsync();
+
+                return ServiceResult<bool>.Success(true);
+            }
+            catch (Exception ex) when (ex is not ArgumentException && ex is not KeyNotFoundException && ex is not UnauthorizedAccessException)
+            {
+                throw new Exception($"Failed to delete entry: {ex.Message}");
             }
         }
     }

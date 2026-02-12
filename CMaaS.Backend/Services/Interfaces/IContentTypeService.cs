@@ -5,18 +5,10 @@ namespace CMaaS.Backend.Services.Interfaces
 {
     public interface IContentTypeService
     {
-        /// <summary>
-        /// Creates a new content type (schema)
-        /// </summary>
-        /// <param name="contentType">Content type to create</param>
-        /// <returns>Created content type</returns>
+        // Creates a new content type (schema)
         Task<ServiceResult<ContentType>> CreateContentTypeAsync(ContentType contentType);
 
-        /// <summary>
-        /// Gets all content types for a specific tenant
-        /// </summary>
-        /// <param name="tenantId">Tenant ID</param>
-        /// <returns>List of content types</returns>
+        // Gets all content types for a specific tenant
         Task<ServiceResult<List<ContentType>>> GetContentTypesByTenantAsync(int tenantId);
     }
 }

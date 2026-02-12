@@ -15,11 +15,7 @@ namespace CMaaS.Backend.Controllers
             _authService = authService;
         }
 
-        /// <summary>
-        /// Register a new company with an admin user
-        /// </summary>
-        /// <param name="request">Registration details</param>
-        /// <returns>Registration result with tenant ID and API key</returns>
+        // Register a new company with an admin user
         [HttpPost("register-company")]
         public async Task<IActionResult> RegisterCompany(RegisterRequestDto request)
         {
@@ -33,11 +29,7 @@ namespace CMaaS.Backend.Controllers
             return Ok(result.Data);
         }
 
-        /// <summary>
-        /// Authenticate user and get JWT token
-        /// </summary>
-        /// <param name="request">Login credentials</param>
-        /// <returns>JWT token</returns>
+        // Authenticate user and get JWT token
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserDto request)
         {

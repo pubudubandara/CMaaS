@@ -5,17 +5,14 @@ namespace CMaaS.Backend.Services.Interfaces
 {
     public interface ITenantService
     {
-        /// <summary>
-        /// Gets all tenants
-        /// </summary>
-        /// <returns>List of all tenants</returns>
+
+        // Gets all tenants
         Task<ServiceResult<List<Tenant>>> GetAllTenantsAsync();
 
-        /// <summary>
-        /// Creates a new tenant
-        /// </summary>
-        /// <param name="tenant">Tenant to create</param>
-        /// <returns>Created tenant</returns>
+        // Creates a new tenant
         Task<ServiceResult<Tenant>> CreateTenantAsync(Tenant tenant);
+
+        // Deletes a tenant by id
+        Task<ServiceResult<bool>> DeleteTenantAsync(int id);
     }
 }

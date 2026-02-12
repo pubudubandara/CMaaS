@@ -24,7 +24,7 @@ namespace CMaaS.Backend.Services.Implementations
             }
             catch (Exception ex)
             {
-                return ServiceResult<List<Tenant>>.Failure($"Failed to retrieve tenants: {ex.Message}");
+                throw new Exception($"Failed to retrieve tenants: {ex.Message}");
             }
         }
 
@@ -33,19 +33,19 @@ namespace CMaaS.Backend.Services.Implementations
             // Validation
             if (tenant == null)
             {
-                return ServiceResult<Tenant>.Failure("Tenant is required.");
+                throw new ArgumentException("Tenant is required.");
             }
 
             if (string.IsNullOrWhiteSpace(tenant.Name))
             {
-                return ServiceResult<Tenant>.Failure("Tenant name is required.");
+                throw new ArgumentException("Tenant name is required.");
             }
 
             // Check if tenant with same name already exists
             var nameExists = await _context.Tenants.AnyAsync(t => t.Name == tenant.Name);
             if (nameExists)
             {
-                return ServiceResult<Tenant>.Failure($"A tenant with name '{tenant.Name}' already exists.");
+                throw new ArgumentException($"A tenant with name '{tenant.Name}' already exists.");
             }
 
             // Set default values if not provided
@@ -73,7 +73,28 @@ namespace CMaaS.Backend.Services.Implementations
             }
             catch (Exception ex)
             {
-                return ServiceResult<Tenant>.Failure($"Failed to create tenant: {ex.Message}");
+                throw new Exception($"Failed to create tenant: {ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResult<bool>> DeleteTenantAsync(int id)
+        {
+            try
+            {
+                var tenant = await _context.Tenants.FindAsync(id);
+                if (tenant == null)
+                {
+                    throw new KeyNotFoundException("Tenant not found.");
+                }
+
+                _context.Tenants.Remove(tenant);
+                await _context.SaveChangesAsync();
+
+                return ServiceResult<bool>.Success(true);
+            }
+            catch (Exception ex) when (ex is not KeyNotFoundException)
+            {
+                throw new Exception($"Failed to delete tenant: {ex.Message}");
             }
         }
     }
