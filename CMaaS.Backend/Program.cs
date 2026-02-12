@@ -1,65 +1,80 @@
 using CMaaS.Backend.Data;
-using CMaaS.Backend.Middlewares;
+using CMaaS.Backend.Middlewares; // Make sure this namespace exists for ApiKeyMiddleware & ExceptionMiddleware
 using CMaaS.Backend.Services.Implementations;
 using CMaaS.Backend.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Microsoft.OpenApi.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// --- IHttpContextAccessor and UserContextService ---
-builder.Services.AddHttpContextAccessor(); // Required to read the token
-builder.Services.AddScoped<IUserContextService, UserContextService>();
 
+// Add HttpContextAccessor (Required to access User/Token in services)
+builder.Services.AddHttpContextAccessor();
+
+// Add Controllers
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// --- Swagger Configuration with JWT Support ---
-builder.Services.AddSwaggerGen(options =>
+// --- Swagger Configuration (JWT + API Key) ---
+builder.Services.AddSwaggerGen(c =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
+    c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "CMaaS API",
         Version = "v1",
         Description = "Content Management as a Service API"
     });
 
-    // Add JWT Authentication to Swagger
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    // 1. JWT Bearer Definition (Auto-adds 'Bearer ' prefix)
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = SecuritySchemeType.Http,
+        Type = SecuritySchemeType.Http, // Changed to Http for better Bearer support
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Enter 'Bearer' [space] and then your valid token.\r\n\r\nExample: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+        Description = "Enter your valid token in the text box below.\nExample: eyJhbGciOiJIUzI1NiIsIn..."
     });
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    // 2. API Key Definition
+    c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
     {
+        Name = "X-Api-Key",
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Description = "Enter your API Key here"
+    });
+
+    // Apply Security Requirements
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        // Require Bearer Token
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
             },
-            Array.Empty<string>()
+            new string[] {}
+        },
+        // Require API Key
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "ApiKey" }
+            },
+            new string[] {}
         }
     });
 });
 
-// PostgreSQL connection
+// --- Database Connection ---
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// --- JWT Authentication Configuration ---
+// --- JWT Authentication Setup ---
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -71,46 +86,38 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"] ??
-                "your-default-secret-key-minimum-32-characters-long")),
-        ValidateIssuer = false,
-        ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "cmaas-api",
-        ValidateAudience = false,
-        ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "cmaas-client",
+            Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"]!)), 
+
+        ValidateIssuer = false,  
+        ValidateAudience = false, 
+
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
 });
 
-// Register Service Layer (Dependency Injection)
-// Authentication Services
+// --- Register Custom Services ---
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-
-// Content Management Services
-builder.Services.AddScoped<IContentEntryService, ContentEntryService>();
-builder.Services.AddScoped<IContentTypeService, ContentTypeService>();
 builder.Services.AddScoped<ITenantService, TenantService>();
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IContentTypeService, ContentTypeService>();
+builder.Services.AddScoped<IContentEntryService, ContentEntryService>();
 
-// Add CORS policy
+
+// Register UserContextService (This helps get TenantId easily)
+builder.Services.AddScoped<IUserContextService, UserContextService>();
+
+// --- CORS Policy ---
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
-        builder =>
-        {
-            builder.AllowAnyOrigin()
-                   .AllowAnyMethod()
-                   .AllowAnyHeader();
-        });
+        builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
 var app = builder.Build();
 
-// --- Global Exception Middleware (Must be first in pipeline) ---
-app.UseMiddleware<ExceptionMiddleware>();
-// -------------------------------------------------------------
 
-// Configure the HTTP request pipeline.
+// 2. Swagger (Development Only)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -119,12 +126,20 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// --- Important: Authentication must come before Authorization ---
-app.UseAuthentication();
-app.UseAuthorization();
-
+// 3. CORS (Must be before Auth)
 app.UseCors("AllowAll");
 
+// 4. Authentication (Standard JWT Check)
+app.UseAuthentication();
+
+// 5. Custom API Key Middleware (Checks API Key and sets User Context)
+app.UseMiddleware<ApiKeyMiddleware>();
+
+
+// 6. Authorization (Checks Roles/Permissions)
+app.UseAuthorization();
+
+// 7. Controllers
 app.MapControllers();
 
 app.Run();
