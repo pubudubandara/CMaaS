@@ -20,13 +20,43 @@ namespace CMaaS.Backend.Services.Implementations
 
         public int? GetTenantId()
         {
-            var tenantClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("TenantId");
-            return tenantClaim != null ? int.Parse(tenantClaim.Value) : null;
+            var user = _httpContextAccessor.HttpContext?.User;
+
+            if (user == null || user.Identity?.IsAuthenticated != true)
+            {
+                return null; 
+            }
+
+            // 
+            var claim = user.FindFirst("TenantId");
+
+            // 2. 
+            if (claim == null)
+            {
+                claim = user.FindFirst("tenantId");
+            }
+
+            if (claim != null && int.TryParse(claim.Value, out int tenantId))
+            {
+                return tenantId;
+            }
+
+            return null;
         }
 
         public string GetUserRole()
         {
             return _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        }
+
+        public bool IsAuthenticated()
+        {
+            return _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+        }
+
+        public string GetAuthenticationMethod()
+        {
+            return _httpContextAccessor.HttpContext?.User?.Identity?.AuthenticationType ?? string.Empty;
         }
     }
 }
