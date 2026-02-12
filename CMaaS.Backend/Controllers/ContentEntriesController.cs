@@ -70,5 +70,31 @@ namespace CMaaS.Backend.Controllers
 
             return Ok(result.Data);
         }
+
+        // DELETE: api/contententries/entry/{id}
+        [HttpDelete("entry/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteEntry(int id)
+        {
+            var result = await _contentEntryService.DeleteEntryAsync(id);
+
+            if (!result.IsSuccess)
+            {
+                if (result.ErrorMessage == "ContentEntry not found.")
+                {
+                    return NotFound(result.ErrorMessage);
+                }
+                else if (result.ErrorMessage == "You can only delete your own data!")
+                {
+                    return Forbid(result.ErrorMessage);
+                }
+                else
+                {
+                    return BadRequest(result.ErrorMessage);
+                }
+            }
+
+            return NoContent();
+        }
     }
 }
