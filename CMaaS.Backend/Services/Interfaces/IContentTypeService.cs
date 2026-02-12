@@ -9,6 +9,6 @@ namespace CMaaS.Backend.Services.Interfaces
         Task<ServiceResult<ContentType>> CreateContentTypeAsync(ContentType contentType);
 
         // Gets all content types for a specific tenant
-        Task<ServiceResult<List<ContentType>>> GetContentTypesByTenantAsync(int tenantId);
+        Task<ServiceResult<List<ContentType>>> GetAllContentTypesAsync();
     }
 }

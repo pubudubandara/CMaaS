@@ -7,6 +7,7 @@ namespace CMaaS.Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class ContentTypesController : ControllerBase
     {
         private readonly IContentTypeService _contentTypeService;
@@ -18,7 +19,6 @@ namespace CMaaS.Backend.Controllers
 
         // Create a new content type (schema)
         [HttpPost]
-        [Authorize]
         public async Task<IActionResult> CreateContentType([FromBody] ContentType contentType)
         {
             var result = await _contentTypeService.CreateContentTypeAsync(contentType);
@@ -31,16 +31,15 @@ namespace CMaaS.Backend.Controllers
             return CreatedAtAction(nameof(GetContentTypes), new { tenantId = result.Data!.TenantId }, result.Data);
         }
 
-        // Get all content types (schemas) for a specific tenant
-        [HttpGet("{tenantId}")]
-        [Authorize]
-        public async Task<IActionResult> GetContentTypes(int tenantId)
+        // Get all content types 
+        [HttpGet]
+        public async Task<IActionResult> GetContentTypes()
         {
-            var result = await _contentTypeService.GetContentTypesByTenantAsync(tenantId);
+            var result = await _contentTypeService.GetAllContentTypesAsync();
 
             if (!result.IsSuccess)
             {
-                return BadRequest(result.ErrorMessage);
+                return BadRequest(new { message = result.ErrorMessage });
             }
 
             return Ok(result.Data);
