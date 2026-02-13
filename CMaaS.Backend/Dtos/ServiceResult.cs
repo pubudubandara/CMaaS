@@ -1,18 +1,13 @@
 namespace CMaaS.Backend.Dtos
 {
-    /// <summary>
-    /// Standardized service layer response wrapper
-    /// </summary>
-    /// <typeparam name="T">Type of data being returned</typeparam>
+    // Standardized service layer response wrapper
     public class ServiceResult<T>
     {
         public bool IsSuccess { get; set; }
         public string? ErrorMessage { get; set; }
         public T? Data { get; set; }
 
-        /// <summary>
-        /// Creates a successful result
-        /// </summary>
+        // Creates a successful result
         public static ServiceResult<T> Success(T data)
         {
             return new ServiceResult<T>
@@ -22,9 +17,7 @@ namespace CMaaS.Backend.Dtos
             };
         }
 
-        /// <summary>
-        /// Creates a failed result with an error message
-        /// </summary>
+        // Creates a failed result with an error message
         public static ServiceResult<T> Failure(string errorMessage)
         {
             return new ServiceResult<T>
