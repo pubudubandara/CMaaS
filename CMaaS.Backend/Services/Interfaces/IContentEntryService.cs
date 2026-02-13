@@ -9,6 +9,8 @@ namespace CMaaS.Backend.Services.Interfaces
         // Creates a new content entry
         Task<ServiceResult<ContentEntry>> CreateEntryAsync(ContentEntry entry);
 
+        // Updates an existing content entry
+        Task<ServiceResult<ContentEntry>> UpdateEntryAsync(int id, ContentEntry entry);
 
         // Gets all content entries for a specific content type with filtering and pagination
         Task<ServiceResult<PaginatedResultDto<ContentEntry>>> GetEntriesByTypeAsync(int contentTypeId, FilterDto filter);
