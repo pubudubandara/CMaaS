@@ -8,13 +8,10 @@ namespace CMaaS.Backend.Services.Interfaces
         // Creates a new content type (schema)
         Task<ServiceResult<ContentType>> CreateContentTypeAsync(ContentType contentType);
 
-        // Updates an existing content type
-        Task<ServiceResult<ContentType>> UpdateContentTypeAsync(int id, ContentType contentType);
-
         // Gets all content types for a specific tenant
-        Task<ServiceResult<List<ContentType>>> GetAllContentTypesAsync();
+        Task<ServiceResult<List<ContentType>>> GetContentTypesByTenantAsync(int tenantId);
 
-        // Gets a single content type by ID for the authenticated tenant
+        // Gets a specific content type by ID for the authenticated tenant
         Task<ServiceResult<ContentType>> GetContentTypeByIdAsync(int id);
     }
 }
