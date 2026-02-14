@@ -23,6 +23,35 @@ namespace CMaaS.Backend.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("CMaaS.Backend.Models.ApiKey", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("ApiKeys");
+                });
+
             modelBuilder.Entity("CMaaS.Backend.Models.ContentEntry", b =>
                 {
                     b.Property<int>("Id")
@@ -38,11 +67,46 @@ namespace CMaaS.Backend.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ContentTypeId");
 
+                    b.HasIndex("TenantId");
+
                     b.ToTable("ContentEntries");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ContentTypeId = 1,
+                            Data = System.Text.Json.JsonDocument.Parse("{\"name\":\"Laptop\",\"description\":\"High-performance laptop\",\"price\":999.99,\"category\":\"Electronics\"}", new System.Text.Json.JsonDocumentOptions()),
+                            TenantId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            ContentTypeId = 1,
+                            Data = System.Text.Json.JsonDocument.Parse("{\"name\":\"Book\",\"description\":\"Programming guide\",\"price\":29.99,\"category\":\"Education\"}", new System.Text.Json.JsonDocumentOptions()),
+                            TenantId = 1
+                        },
+                        new
+                        {
+                            Id = 3,
+                            ContentTypeId = 2,
+                            Data = System.Text.Json.JsonDocument.Parse("{\"title\":\"Getting Started with CMaaS\",\"content\":\"This is a sample blog post about CMaaS.\",\"author\":\"Admin\",\"publishDate\":\"2023-01-01\"}", new System.Text.Json.JsonDocumentOptions()),
+                            TenantId = 1
+                        },
+                        new
+                        {
+                            Id = 4,
+                            ContentTypeId = 3,
+                            Data = System.Text.Json.JsonDocument.Parse("{\"name\":\"Tablet\",\"price\":299.99,\"stock\":50}", new System.Text.Json.JsonDocumentOptions()),
+                            TenantId = 2
+                        });
                 });
 
             modelBuilder.Entity("CMaaS.Backend.Models.ContentType", b =>
@@ -69,6 +133,29 @@ namespace CMaaS.Backend.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("ContentTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Product",
+                            Schema = System.Text.Json.JsonDocument.Parse("{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\"},\"description\":{\"type\":\"string\"},\"price\":{\"type\":\"number\"},\"category\":{\"type\":\"string\"}},\"required\":[\"name\",\"price\"]}", new System.Text.Json.JsonDocumentOptions()),
+                            TenantId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "BlogPost",
+                            Schema = System.Text.Json.JsonDocument.Parse("{\"type\":\"object\",\"properties\":{\"title\":{\"type\":\"string\"},\"content\":{\"type\":\"string\"},\"author\":{\"type\":\"string\"},\"publishDate\":{\"type\":\"string\",\"format\":\"date\"}},\"required\":[\"title\",\"content\"]}", new System.Text.Json.JsonDocumentOptions()),
+                            TenantId = 1
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Product",
+                            Schema = System.Text.Json.JsonDocument.Parse("{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\"},\"price\":{\"type\":\"number\"},\"stock\":{\"type\":\"integer\"}},\"required\":[\"name\"]}", new System.Text.Json.JsonDocumentOptions()),
+                            TenantId = 2
+                        });
                 });
 
             modelBuilder.Entity("CMaaS.Backend.Models.Tenant", b =>
@@ -96,6 +183,24 @@ namespace CMaaS.Backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Tenants");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ApiKey = "983d308bd9f340df956c8fedcdf9476c",
+                            CreatedAt = new DateTime(2026, 2, 14, 5, 35, 26, 685, DateTimeKind.Utc).AddTicks(7929),
+                            Name = "Sample Tenant 1",
+                            PlanType = 0
+                        },
+                        new
+                        {
+                            Id = 2,
+                            ApiKey = "abc123def456ghi789jkl012mno345",
+                            CreatedAt = new DateTime(2026, 2, 14, 5, 35, 26, 685, DateTimeKind.Utc).AddTicks(7931),
+                            Name = "Sample Tenant 2",
+                            PlanType = 1
+                        });
                 });
 
             modelBuilder.Entity("CMaaS.Backend.Models.User", b =>
@@ -129,6 +234,46 @@ namespace CMaaS.Backend.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Email = "admin@sampletenant1.com",
+                            FullName = "Admin User",
+                            PasswordHash = "$2a$11$examplehashedpassword",
+                            Role = 0,
+                            TenantId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Email = "user@sampletenant1.com",
+                            FullName = "Regular User",
+                            PasswordHash = "$2a$11$examplehashedpassword",
+                            Role = 1,
+                            TenantId = 1
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Email = "admin@sampletenant2.com",
+                            FullName = "Admin User 2",
+                            PasswordHash = "$2a$11$examplehashedpassword",
+                            Role = 0,
+                            TenantId = 2
+                        });
+                });
+
+            modelBuilder.Entity("CMaaS.Backend.Models.ApiKey", b =>
+                {
+                    b.HasOne("CMaaS.Backend.Models.Tenant", "Tenant")
+                        .WithMany("ApiKeys")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("CMaaS.Backend.Models.ContentEntry", b =>
@@ -139,7 +284,15 @@ namespace CMaaS.Backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CMaaS.Backend.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("ContentType");
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("CMaaS.Backend.Models.ContentType", b =>
@@ -162,6 +315,11 @@ namespace CMaaS.Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("CMaaS.Backend.Models.Tenant", b =>
+                {
+                    b.Navigation("ApiKeys");
                 });
 #pragma warning restore 612, 618
         }
