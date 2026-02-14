@@ -2,14 +2,12 @@
 using CMaaS.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using CMaaS.Backend.Filters;
 
 namespace CMaaS.Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "SuperAdmin")]
+    [Authorize]
     public class TenantsController : ControllerBase
     {
         private readonly ITenantService _tenantService;
@@ -27,13 +25,13 @@ namespace CMaaS.Backend.Controllers
 
             if (!result.IsSuccess)
             {
-                throw new Exception(result.ErrorMessage);
+                return BadRequest(result.ErrorMessage);
             }
 
             return Ok(result.Data);
         }
 
-        // Create a new tenant
+        // Create tenant
         [HttpPost]
         public async Task<IActionResult> CreateTenant([FromBody] Tenant tenant)
         {
@@ -41,23 +39,10 @@ namespace CMaaS.Backend.Controllers
 
             if (!result.IsSuccess)
             {
-                throw new ArgumentException(result.ErrorMessage);
+                return BadRequest(result.ErrorMessage);
             }
 
             return CreatedAtAction(nameof(GetAllTenants), new { id = result.Data!.Id }, result.Data);
-        }
-        // DELETE: api/tenants/{id}
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTenant(int id)
-        {
-            var result = await _tenantService.DeleteTenantAsync(id);
-
-            if (!result.IsSuccess)
-            {
-                throw new KeyNotFoundException(result.ErrorMessage);
-            }
-
-            return NoContent();
         }
     }
 }

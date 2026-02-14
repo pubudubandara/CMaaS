@@ -24,7 +24,7 @@ namespace CMaaS.Backend.Services.Implementations
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to retrieve tenants: {ex.Message}");
+                return ServiceResult<List<Tenant>>.Failure($"Failed to retrieve tenants: {ex.Message}");
             }
         }
 
@@ -33,27 +33,22 @@ namespace CMaaS.Backend.Services.Implementations
             // Validation
             if (tenant == null)
             {
-                throw new ArgumentException("Tenant is required.");
+                return ServiceResult<Tenant>.Failure("Tenant is required.");
             }
 
             if (string.IsNullOrWhiteSpace(tenant.Name))
             {
-                throw new ArgumentException("Tenant name is required.");
+                return ServiceResult<Tenant>.Failure("Tenant name is required.");
             }
 
             // Check if tenant with same name already exists
             var nameExists = await _context.Tenants.AnyAsync(t => t.Name == tenant.Name);
             if (nameExists)
             {
-                throw new ArgumentException($"A tenant with name '{tenant.Name}' already exists.");
+                return ServiceResult<Tenant>.Failure($"A tenant with name '{tenant.Name}' already exists.");
             }
 
             // Set default values if not provided
-            if (string.IsNullOrWhiteSpace(tenant.ApiKey))
-            {
-                tenant.ApiKey = Guid.NewGuid().ToString("N");
-            }
-
             if (tenant.PlanType == 0)
             {
                 tenant.PlanType = SubscriptionPlan.Free;
@@ -64,6 +59,9 @@ namespace CMaaS.Backend.Services.Implementations
                 tenant.CreatedAt = DateTime.UtcNow;
             }
 
+            // Note: API key generation is now handled via IApiKeyService.CreateApiKeyAsync()
+            // No automatic API key is generated here anymore
+
             try
             {
                 _context.Tenants.Add(tenant);
@@ -73,7 +71,7 @@ namespace CMaaS.Backend.Services.Implementations
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to create tenant: {ex.Message}");
+                return ServiceResult<Tenant>.Failure($"Failed to create tenant: {ex.Message}");
             }
         }
 
@@ -84,7 +82,7 @@ namespace CMaaS.Backend.Services.Implementations
                 var tenant = await _context.Tenants.FindAsync(id);
                 if (tenant == null)
                 {
-                    throw new KeyNotFoundException("Tenant not found.");
+                    return ServiceResult<bool>.Failure("Tenant not found.");
                 }
 
                 _context.Tenants.Remove(tenant);
@@ -92,9 +90,9 @@ namespace CMaaS.Backend.Services.Implementations
 
                 return ServiceResult<bool>.Success(true);
             }
-            catch (Exception ex) when (ex is not KeyNotFoundException)
+            catch (Exception ex)
             {
-                throw new Exception($"Failed to delete tenant: {ex.Message}");
+                return ServiceResult<bool>.Failure($"Failed to delete tenant: {ex.Message}");
             }
         }
 
