@@ -19,6 +19,11 @@ namespace CMaaS.Backend.Controllers
             _contentEntryService = contentEntryService;
         }
 
+        /// <summary>
+        /// Create a new content entry
+        /// </summary>
+        /// <param name="entry">Content entry to create (TenantId will be set automatically)</param>
+        /// <returns>Created content entry</returns>
         // Create a new content entry
         [HttpPost]
         public async Task<IActionResult> CreateEntry([FromBody] ContentEntry entry)
@@ -33,6 +38,25 @@ namespace CMaaS.Backend.Controllers
             return CreatedAtAction(nameof(GetEntryById), new { id = result.Data!.Id }, result.Data);
         }
 
+        /// <summary>
+        /// Update an existing content entry
+        /// </summary>
+        /// <param name="id">Entry ID</param>
+        /// <param name="entry">Updated content entry data</param>
+        /// <returns>Updated content entry</returns>
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateEntry(int id, [FromBody] ContentEntry entry)
+        {
+            var result = await _contentEntryService.UpdateEntryAsync(id, entry);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.ErrorMessage);
+            }
+
+            return Ok(result.Data);
+        }
 
         // Get all content entries for a specific content type with filtering and pagination
 

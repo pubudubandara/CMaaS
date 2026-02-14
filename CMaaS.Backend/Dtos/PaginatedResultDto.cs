@@ -1,9 +1,6 @@
 namespace CMaaS.Backend.Dtos
 {
-    /// <summary>
-    /// Generic paginated response wrapper
-    /// </summary>
-    /// <typeparam name="T">Type of data items</typeparam>
+    // Generic paginated response wrapper
     public class PaginatedResultDto<T>
     {
         public int TotalRecords { get; set; }

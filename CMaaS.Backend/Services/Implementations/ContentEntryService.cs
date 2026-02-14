@@ -127,5 +127,49 @@ namespace CMaaS.Backend.Services.Implementations
 
             return ServiceResult<bool>.Success(true);
         }
+
+        public async Task<ServiceResult<ContentEntry>> UpdateEntryAsync(int id, ContentEntry entry)
+        {
+            // Get tenant ID from authenticated user
+            var tenantId = _userContext.GetTenantId();
+            if (tenantId == null)
+            {
+                return ServiceResult<ContentEntry>.Failure("Authentication required. Please provide a valid JWT token or API key.");
+            }
+
+            // Validation
+            if (entry == null)
+            {
+                return ServiceResult<ContentEntry>.Failure("ContentEntry is required.");
+            }
+
+            if (entry.Data == null)
+            {
+                return ServiceResult<ContentEntry>.Failure("Data is required.");
+            }
+
+            try
+            {
+                // Find existing entry and verify it belongs to the authenticated tenant
+                var existingEntry = await _context.ContentEntries
+                    .FirstOrDefaultAsync(e => e.Id == id && e.TenantId == tenantId.Value);
+
+                if (existingEntry == null)
+                {
+                    return ServiceResult<ContentEntry>.Failure("ContentEntry not found or access denied.");
+                }
+
+                // Update the data (do not allow changing ContentTypeId or TenantId)
+                existingEntry.Data = entry.Data;
+
+                await _context.SaveChangesAsync();
+
+                return ServiceResult<ContentEntry>.Success(existingEntry);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<ContentEntry>.Failure($"Failed to update entry: {ex.Message}");
+            }
+        }
     }
 }
