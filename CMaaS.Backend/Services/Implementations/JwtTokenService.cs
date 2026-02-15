@@ -16,7 +16,7 @@ namespace CMaaS.Backend.Services.Implementations
             _configuration = configuration;
         }
 
-        public string GenerateToken(User user)
+        public string GenerateToken(User user, string tenantName = "")
         {
             List<Claim> claims = new List<Claim>
             {
@@ -24,6 +24,7 @@ namespace CMaaS.Backend.Services.Implementations
                 new Claim(ClaimTypes.Name, user.Email),
                 new Claim("FullName", user.FullName),
                 new Claim("TenantId", user.TenantId.ToString()),
+                new Claim("TenantName", tenantName),
                 new Claim(ClaimTypes.Role, user.Role.ToString())
             };
 

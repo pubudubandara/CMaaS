@@ -109,8 +109,10 @@ namespace CMaaS.Backend.Services.Implementations
                 return ServiceResult<string>.Failure("Password is required.");
             }
 
-            // 2. Find user by email
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+            // 2. Find user by email (include Tenant for organization name)
+            var user = await _context.Users
+                .Include(u => u.Tenant)
+                .FirstOrDefaultAsync(u => u.Email == request.Email);
 
             // 3. Validate user exists and password is correct
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
@@ -118,10 +120,11 @@ namespace CMaaS.Backend.Services.Implementations
                 return ServiceResult<string>.Failure("Wrong email or password.");
             }
 
-            // 4. Generate JWT token
+            // 4. Generate JWT token with tenant name
             try
             {
-                string token = _jwtTokenService.GenerateToken(user);
+                var tenantName = user.Tenant?.Name ?? "Unknown";
+                string token = _jwtTokenService.GenerateToken(user, tenantName);
                 return ServiceResult<string>.Success(token);
             }
             catch (Exception ex)

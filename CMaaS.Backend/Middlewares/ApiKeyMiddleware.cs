@@ -22,29 +22,30 @@ namespace CMaaS.Backend.Middlewares
             {
                 try
                 {
-                    // Verify the API key by hashing and comparing
+                    // Hash the provided API key
                     var hashedProvidedKey = HashApiKey(extractedApiKey.ToString());
                     
-                    // Search for matching API key
+                    // Search for matching API key in database
                     var matchingApiKey = dbContext.ApiKeys
                         .FirstOrDefault(ak => ak.Key == hashedProvidedKey);
 
                     if (matchingApiKey != null)
                     {
-                        // API Key is valid - Set up the user context with API key claims
+                        // Set up the user context with API key claims
                         var claims = new List<Claim>
                         {
                             new Claim(ClaimTypes.NameIdentifier, "api-key-user"),
                             new Claim("TenantId", matchingApiKey.TenantId.ToString()),
                             new Claim(ClaimTypes.AuthenticationMethod, "ApiKey"),
-                            new Claim("ApiKeyId", matchingApiKey.Id.ToString())
+                            new Claim("ApiKeyId", matchingApiKey.Id.ToString()),
+                            new Claim("ApiKeyName", matchingApiKey.Name ?? "Unknown")
                         };
 
                         var identity = new ClaimsIdentity(claims, "ApiKey");
                         var principal = new ClaimsPrincipal(identity);
                         context.User = principal;
 
-                        _logger.LogInformation($"API Key authentication successful for API Key ID: {matchingApiKey.Id}, Tenant: {matchingApiKey.TenantId}");
+                        _logger.LogInformation($"API Key authentication successful for API Key ID: {matchingApiKey.Id}");
                     }
                     else
                     {
@@ -67,9 +68,7 @@ namespace CMaaS.Backend.Middlewares
             await _next(context);
         }
 
-        /// <summary>
-        /// Hashes the API key using SHA256 (matches the hashing in ApiKeyService)
-        /// </summary>
+        // Hash API key using SHA256
         private string HashApiKey(string apiKey)
         {
             using (var sha256 = System.Security.Cryptography.SHA256.Create())
