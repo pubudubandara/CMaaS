@@ -97,12 +97,20 @@ builder.Services.AddAuthentication(options =>
 });
 
 // --- Register Custom Services ---
+// Authentication Services
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-builder.Services.AddScoped<IContentTypeService, ContentTypeService>();
-builder.Services.AddScoped<IContentEntryService, ContentEntryService>();
+builder.Services.AddScoped<ITenantService, TenantService>();
 
+// Content Management Services
+builder.Services.AddScoped<IContentEntryService, ContentEntryService>();
+builder.Services.AddScoped<IContentTypeService, ContentTypeService>();
+
+// API Key Management Service
+builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+
+// Dashboard Service
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // Register UserContextService (This helps get TenantId easily)
 builder.Services.AddScoped<IUserContextService, UserContextService>();

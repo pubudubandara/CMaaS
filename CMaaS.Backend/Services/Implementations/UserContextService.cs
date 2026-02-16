@@ -58,5 +58,17 @@ namespace CMaaS.Backend.Services.Implementations
         {
             return _httpContextAccessor.HttpContext?.User?.Identity?.AuthenticationType ?? string.Empty;
         }
+
+        public string GetTenantName()
+        {
+            var tenantNameClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("TenantName");
+            return tenantNameClaim?.Value ?? string.Empty;
+        }
+
+        public string GetApiKeyName()
+        {
+            var apiKeyNameClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("ApiKeyName");
+            return apiKeyNameClaim?.Value ?? string.Empty;
+        }
     }
 }

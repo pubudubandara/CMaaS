@@ -1,5 +1,5 @@
 using CMaaS.Backend.Data;
-using Microsoft.EntityFrameworkCore;
+using CMaaS.Backend.Services.Interfaces;
 using System.Security.Claims;
 
 namespace CMaaS.Backend.Middlewares
@@ -7,42 +7,75 @@ namespace CMaaS.Backend.Middlewares
     public class ApiKeyMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly ILogger<ApiKeyMiddleware> _logger;
 
-        public ApiKeyMiddleware(RequestDelegate next)
+        public ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddleware> logger)
         {
             _next = next;
+            _logger = logger;
         }
 
-        public async Task InvokeAsync(HttpContext context, IServiceScopeFactory scopeFactory)
+        public async Task InvokeAsync(HttpContext context, AppDbContext dbContext)
         {
-            // 1. Check if the API Key exists in the header
+            // Check if request has API Key header
             if (context.Request.Headers.TryGetValue("X-Api-Key", out var extractedApiKey))
             {
-                // Need to check the database, so create a scope
-                using (var scope = scopeFactory.CreateScope())
+                try
                 {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    // Hash the provided API key
+                    var hashedProvidedKey = HashApiKey(extractedApiKey.ToString());
+                    
+                    // Search for matching API key in database
+                    var matchingApiKey = dbContext.ApiKeys
+                        .FirstOrDefault(ak => ak.Key == hashedProvidedKey);
 
-                    // 2. Find the tenant using the API Key
-                    var tenant = await dbContext.Tenants.FirstOrDefaultAsync(t => t.ApiKey == extractedApiKey.ToString());
-
-                    if (tenant != null)
+                    if (matchingApiKey != null)
                     {
-                        // 3. If valid, create a fake User (Principal) and set it in the system
+                        // Set up the user context with API key claims
                         var claims = new List<Claim>
                         {
-                            new Claim("TenantId", tenant.Id.ToString()), // Tenant ID as a Claim
-                            new Claim(ClaimTypes.Role, "Viewer") // Having an API Key means they're like an API User
+                            new Claim(ClaimTypes.NameIdentifier, "api-key-user"),
+                            new Claim("TenantId", matchingApiKey.TenantId.ToString()),
+                            new Claim(ClaimTypes.AuthenticationMethod, "ApiKey"),
+                            new Claim("ApiKeyId", matchingApiKey.Id.ToString()),
+                            new Claim("ApiKeyName", matchingApiKey.Name ?? "Unknown")
                         };
 
                         var identity = new ClaimsIdentity(claims, "ApiKey");
-                        context.User = new ClaimsPrincipal(identity); // <--- This is the most important part!
+                        var principal = new ClaimsPrincipal(identity);
+                        context.User = principal;
+
+                        _logger.LogInformation($"API Key authentication successful for API Key ID: {matchingApiKey.Id}");
                     }
+                    else
+                    {
+                        _logger.LogWarning("Invalid API Key provided");
+                        context.Response.StatusCode = 401;
+                        await context.Response.WriteAsync("Invalid API Key.");
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error validating API Key");
+                    context.Response.StatusCode = 401;
+                    await context.Response.WriteAsync("API Key validation failed.");
+                    return;
                 }
             }
 
-            // Send to the next step (JWT Middleware or Controller)
+            // Continue to next middleware
             await _next(context);
+        }
+
+        // Hash API key using SHA256
+        private string HashApiKey(string apiKey)
+        {
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                var hashedBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(apiKey));
+                return Convert.ToBase64String(hashedBytes);
+            }
         }
     }
 }

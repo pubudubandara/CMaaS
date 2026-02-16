@@ -51,12 +51,12 @@ namespace CMaaS.Backend.Services.Implementations
 
             try
             {
-                // Step A: Create Tenant (Company)
+                // Step A: Create Tenant (Company) - NO automatic API key
                 var tenant = new Tenant
                 {
                     Name = request.OrganizationName,
-                    PlanType = SubscriptionPlan.Free,
-                    ApiKey = Guid.NewGuid().ToString("N") // Generate API Key
+                    PlanType = SubscriptionPlan.Free
+                    // API key generation removed - use ApiKeyService.CreateApiKeyAsync() instead
                 };
 
                 _context.Tenants.Add(tenant);
@@ -78,12 +78,12 @@ namespace CMaaS.Backend.Services.Implementations
                 // Step C: Commit Transaction
                 await transaction.CommitAsync();
 
-                // Return success response
+                // Return success response - NO API key returned
                 var response = new RegisterResponseDto
                 {
-                    Message = "Company registered successfully!",
+                    Message = "Company registered successfully! Use the Admin Dashboard to create API keys.",
                     TenantId = tenant.Id,
-                    ApiKey = tenant.ApiKey
+                    ApiKey = string.Empty // No API key returned during registration
                 };
 
                 return ServiceResult<RegisterResponseDto>.Success(response);
@@ -109,8 +109,10 @@ namespace CMaaS.Backend.Services.Implementations
                 return ServiceResult<string>.Failure("Password is required.");
             }
 
-            // 2. Find user by email
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+            // 2. Find user by email (include Tenant for organization name)
+            var user = await _context.Users
+                .Include(u => u.Tenant)
+                .FirstOrDefaultAsync(u => u.Email == request.Email);
 
             // 3. Validate user exists and password is correct
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
@@ -118,10 +120,11 @@ namespace CMaaS.Backend.Services.Implementations
                 return ServiceResult<string>.Failure("Wrong email or password.");
             }
 
-            // 4. Generate JWT token
+            // 4. Generate JWT token with tenant name
             try
             {
-                string token = _jwtTokenService.GenerateToken(user);
+                var tenantName = user.Tenant?.Name ?? "Unknown";
+                string token = _jwtTokenService.GenerateToken(user, tenantName);
                 return ServiceResult<string>.Success(token);
             }
             catch (Exception ex)

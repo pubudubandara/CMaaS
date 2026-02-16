@@ -3,13 +3,12 @@ using CMaaS.Backend.Models;
 using CMaaS.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using CMaaS.Backend.Filters;
 
 namespace CMaaS.Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class ContentEntriesController : ControllerBase
     {
         private readonly IContentEntryService _contentEntryService;
@@ -19,12 +18,7 @@ namespace CMaaS.Backend.Controllers
             _contentEntryService = contentEntryService;
         }
 
-        /// <summary>
-        /// Create a new content entry
-        /// </summary>
-        /// <param name="entry">Content entry to create (TenantId will be set automatically)</param>
-        /// <returns>Created content entry</returns>
-        // Create a new content entry
+        // Create content entry
         [HttpPost]
         public async Task<IActionResult> CreateEntry([FromBody] ContentEntry entry)
         {
@@ -38,12 +32,7 @@ namespace CMaaS.Backend.Controllers
             return CreatedAtAction(nameof(GetEntryById), new { id = result.Data!.Id }, result.Data);
         }
 
-        /// <summary>
-        /// Update an existing content entry
-        /// </summary>
-        /// <param name="id">Entry ID</param>
-        /// <param name="entry">Updated content entry data</param>
-        /// <returns>Updated content entry</returns>
+        // Update content entry
         [HttpPut("{id}")]
         [Authorize]
         public async Task<IActionResult> UpdateEntry(int id, [FromBody] ContentEntry entry)
@@ -58,8 +47,7 @@ namespace CMaaS.Backend.Controllers
             return Ok(result.Data);
         }
 
-        // Get all content entries for a specific content type with filtering and pagination
-
+        // Get all entries for content type
         [HttpGet("{contentTypeId}")]
         public async Task<IActionResult> GetEntriesByType(int contentTypeId, [FromQuery] FilterDto filter)
         {
@@ -73,7 +61,7 @@ namespace CMaaS.Backend.Controllers
             return Ok(result.Data);
         }
 
-        // Get a single content entry by ID
+        // Get single entry by ID
         [HttpGet("entry/{id}")]
         public async Task<IActionResult> GetEntryById(int id)
         {
@@ -110,6 +98,23 @@ namespace CMaaS.Backend.Controllers
             }
 
             return NoContent();
+        }
+
+        // Toggle visibility of a content entry
+        [HttpPatch("{id}/toggle-visibility")]
+        public async Task<IActionResult> ToggleVisibility(int id)
+        {
+            var result = await _contentEntryService.ToggleVisibilityAsync(id);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.ErrorMessage);
+            }
+
+            return Ok(new
+            {
+                message = "Visibility toggled successfully",
+            });
         }
     }
 }

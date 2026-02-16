@@ -3,7 +3,6 @@ using CMaaS.Backend.Dtos;
 using CMaaS.Backend.Models;
 using CMaaS.Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 
 namespace CMaaS.Backend.Services.Implementations
 {
@@ -20,14 +19,12 @@ namespace CMaaS.Backend.Services.Implementations
 
         public async Task<ServiceResult<ContentType>> CreateContentTypeAsync(ContentType contentType)
         {
-            // Get tenant ID from authenticated user (NOT from request body)
             var tenantId = _userContext.GetTenantId();
             if (tenantId == null)
             {
-                return ServiceResult<ContentType>.Failure("Authentication required. Please provide a valid JWT token or API key.");
+                return ServiceResult<ContentType>.Failure("Authentication required.");
             }
 
-            // Validation
             if (contentType == null)
             {
                 return ServiceResult<ContentType>.Failure("ContentType is required.");
@@ -43,16 +40,14 @@ namespace CMaaS.Backend.Services.Implementations
                 return ServiceResult<ContentType>.Failure("Schema is required.");
             }
 
-            // Set the tenant ID from authenticated user (security fix)
             contentType.TenantId = tenantId.Value;
 
-            // Check if content type with same name already exists for this tenant
             var nameExists = await _context.ContentTypes
                 .AnyAsync(ct => ct.Name == contentType.Name && ct.TenantId == contentType.TenantId);
             
             if (nameExists)
             {
-                return ServiceResult<ContentType>.Failure($"A content type with name '{contentType.Name}' already exists for this tenant.");
+                return ServiceResult<ContentType>.Failure($"A content type with name '{contentType.Name}' already exists.");
             }
 
             try
@@ -68,34 +63,35 @@ namespace CMaaS.Backend.Services.Implementations
             }
         }
 
-        public async Task<ServiceResult<List<ContentType>>> GetAllContentTypesAsync()
+        public async Task<ServiceResult<List<ContentType>>> GetContentTypesByTenantAsync(int tenantId)
         {
-            //find the tenent ID from the authenticated user (NOT from request body)
-            var tenantId = _userContext.GetTenantId();
-
-            if (tenantId == null)
+            var authenticatedTenantId = _userContext.GetTenantId();
+            if (authenticatedTenantId == null)
             {
                 return ServiceResult<List<ContentType>>.Failure("Authentication required.");
+            }
+
+            if (authenticatedTenantId.Value != tenantId)
+            {
+                return ServiceResult<List<ContentType>>.Failure("Access denied.");
             }
 
             try
             {
                 var contentTypes = await _context.ContentTypes
-                    .Where(ct => ct.TenantId == tenantId.Value)
-                    .AsNoTracking()
+                    .Where(ct => ct.TenantId == tenantId)
                     .ToListAsync();
 
                 return ServiceResult<List<ContentType>>.Success(contentTypes);
             }
             catch (Exception ex)
             {
-                return ServiceResult<List<ContentType>>.Failure(ex.Message);
+                return ServiceResult<List<ContentType>>.Failure($"Failed to retrieve content types: {ex.Message}");
             }
         }
 
         public async Task<ServiceResult<ContentType>> GetContentTypeByIdAsync(int id)
         {
-            // Get tenant ID from authenticated user
             var tenantId = _userContext.GetTenantId();
             if (tenantId == null)
             {
@@ -109,13 +105,12 @@ namespace CMaaS.Backend.Services.Implementations
 
             try
             {
-                // Get content type and verify it belongs to the authenticated tenant
                 var contentType = await _context.ContentTypes
-                    .FirstOrDefaultAsync(ct => ct.Id == id && ct.TenantId == tenantId.Value);
+                    .FirstOrDefaultAsync(ct => ct.Id == id && ct.TenantId == tenantId);
 
                 if (contentType == null)
                 {
-                    return ServiceResult<ContentType>.Failure("ContentType not found or access denied.");
+                    return ServiceResult<ContentType>.Failure("Content type not found or access denied.");
                 }
 
                 return ServiceResult<ContentType>.Success(contentType);
@@ -128,14 +123,17 @@ namespace CMaaS.Backend.Services.Implementations
 
         public async Task<ServiceResult<ContentType>> UpdateContentTypeAsync(int id, ContentType contentType)
         {
-            // Get tenant ID from authenticated user
             var tenantId = _userContext.GetTenantId();
             if (tenantId == null)
             {
-                return ServiceResult<ContentType>.Failure("Authentication required. Please provide a valid JWT token or API key.");
+                return ServiceResult<ContentType>.Failure("Authentication required.");
             }
 
-            // Validation
+            if (id <= 0)
+            {
+                return ServiceResult<ContentType>.Failure("Invalid content type ID.");
+            }
+
             if (contentType == null)
             {
                 return ServiceResult<ContentType>.Failure("ContentType is required.");
@@ -153,25 +151,25 @@ namespace CMaaS.Backend.Services.Implementations
 
             try
             {
-                // Find existing content type and verify it belongs to the authenticated tenant
+                // Find the existing content type
                 var existingContentType = await _context.ContentTypes
-                    .FirstOrDefaultAsync(ct => ct.Id == id && ct.TenantId == tenantId.Value);
+                    .FirstOrDefaultAsync(ct => ct.Id == id && ct.TenantId == tenantId);
 
                 if (existingContentType == null)
                 {
-                    return ServiceResult<ContentType>.Failure("ContentType not found or access denied.");
+                    return ServiceResult<ContentType>.Failure("Content type not found or access denied.");
                 }
 
-                // Check if another content type with the same name exists for this tenant (excluding current)
+                // Check if the new name already exists for another content type
                 var nameExists = await _context.ContentTypes
-                    .AnyAsync(ct => ct.Name == contentType.Name && ct.TenantId == tenantId.Value && ct.Id != id);
+                    .AnyAsync(ct => ct.Name == contentType.Name && ct.TenantId == tenantId && ct.Id != id);
 
                 if (nameExists)
                 {
-                    return ServiceResult<ContentType>.Failure($"A content type with name '{contentType.Name}' already exists for this tenant.");
+                    return ServiceResult<ContentType>.Failure($"A content type with name '{contentType.Name}' already exists.");
                 }
 
-                // Update the fields (do not allow changing TenantId)
+                // Update the content type
                 existingContentType.Name = contentType.Name;
                 existingContentType.Schema = contentType.Schema;
 
