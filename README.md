@@ -57,7 +57,7 @@ SchemaFlow is a flexible, multi-tenant content management system that allows org
 
 ```bash
 git clone <repository-url>
-cd backend/CMaaS.Backend
+cd CMaaS.Backend
 ```
 
 ### 2. Install Dependencies
