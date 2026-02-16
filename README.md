@@ -2,7 +2,7 @@
 
 A powerful, multi-tenant Content Management as a Service (CMS) API built with ASP.NET Core 8 and Entity Framework Core, supporting both JWT and API Key authentication.
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
@@ -15,7 +15,7 @@ A powerful, multi-tenant Content Management as a Service (CMS) API built with AS
 - [Database Models](#database-models)
 - [Project Structure](#project-structure)
 
-## 🎯 Overview
+## Overview
 
 SchemaFlow is a flexible, multi-tenant content management system that allows organizations to:
 - Create custom content types (schemas)
@@ -24,7 +24,7 @@ SchemaFlow is a flexible, multi-tenant content management system that allows org
 - Manage API keys for programmatic access
 - View dashboard statistics
 
-## ✨ Features
+## Features
 
 - **Multi-Tenant Architecture**: Complete data isolation per tenant
 - **Dual Authentication**: JWT tokens and API Keys
@@ -35,7 +35,7 @@ SchemaFlow is a flexible, multi-tenant content management system that allows org
 - **Pagination & Filtering**: Built-in support for large datasets
 - **Request Logging**: Comprehensive logging for debugging
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework**: ASP.NET Core 8
 - **Database**: PostgreSQL
@@ -44,14 +44,14 @@ SchemaFlow is a flexible, multi-tenant content management system that allows org
 - **Validation**: FluentValidation
 - **Hashing**: BCrypt.Net
 
-## 📦 Prerequisites
+## Prerequisites
 
 - .NET 8 SDK or higher
 - PostgreSQL 12+
 - Visual Studio 2022 or VS Code
 - Git
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Clone the Repository
 
@@ -95,7 +95,7 @@ dotnet run
 
 The API will be available at `http://localhost:5000` or `https://localhost:5001`
 
-## ⚙️ Configuration
+## Configuration
 
 ### JWT Settings (appsettings.json)
 
@@ -117,7 +117,7 @@ The API will be available at `http://localhost:5000` or `https://localhost:5001`
 }
 ```
 
-## 📚 API Endpoints
+## API Endpoints
 
 ### Authentication
 
@@ -443,7 +443,7 @@ Authorization: Bearer {token}
 
 ---
 
-## 🔐 Authentication
+## Authentication
 
 ### JWT Bearer Token
 
@@ -476,7 +476,7 @@ curl -H "X-Api-Key: {api_key}" https://api.example.com/api/Delivery/BlogPost
 
 ---
 
-## 📊 Database Models
+## Database Models
 
 ### User
 ```csharp
@@ -547,7 +547,7 @@ public class ApiKey
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 SchemaFlow.Backend/
@@ -605,7 +605,7 @@ SchemaFlow.Backend/
 
 ---
 
-## 💡 Examples
+## Examples
 
 ### Complete Workflow Example
 
@@ -669,7 +669,7 @@ curl -X GET https://localhost:5001/api/Delivery/BlogPost?page=1 \
 
 ---
 
-## 🐛 Error Handling
+## Error Handling
 
 All error responses follow this format:
 
@@ -689,7 +689,7 @@ All error responses follow this format:
 
 ---
 
-## 🔄 Pagination
+## Pagination
 
 All list endpoints support pagination:
 
@@ -701,6 +701,4 @@ GET /api/endpoint?page=1&pageSize=10&searchTerm=optional
 - `page`: Page number (default: 1)
 - `pageSize`: Number of records per page (default: 10)
 - `searchTerm`: Optional search filter
-
----
 
