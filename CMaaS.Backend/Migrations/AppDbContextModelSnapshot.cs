@@ -89,7 +89,7 @@ namespace CMaaS.Backend.Migrations
                         {
                             Id = 1,
                             ContentTypeId = 1,
-                            CreatedAt = new DateTime(2026, 2, 14, 13, 15, 24, 912, DateTimeKind.Utc).AddTicks(4184),
+                            CreatedAt = new DateTime(2026, 2, 23, 4, 5, 49, 844, DateTimeKind.Utc).AddTicks(3986),
                             Data = System.Text.Json.JsonDocument.Parse("{\"name\":\"Laptop\",\"description\":\"High-performance laptop\",\"price\":999.99,\"category\":\"Electronics\"}", new System.Text.Json.JsonDocumentOptions()),
                             IsVisible = true,
                             TenantId = 1
@@ -98,7 +98,7 @@ namespace CMaaS.Backend.Migrations
                         {
                             Id = 2,
                             ContentTypeId = 1,
-                            CreatedAt = new DateTime(2026, 2, 14, 13, 15, 24, 912, DateTimeKind.Utc).AddTicks(4224),
+                            CreatedAt = new DateTime(2026, 2, 23, 4, 5, 49, 844, DateTimeKind.Utc).AddTicks(4030),
                             Data = System.Text.Json.JsonDocument.Parse("{\"name\":\"Book\",\"description\":\"Programming guide\",\"price\":29.99,\"category\":\"Education\"}", new System.Text.Json.JsonDocumentOptions()),
                             IsVisible = true,
                             TenantId = 1
@@ -107,7 +107,7 @@ namespace CMaaS.Backend.Migrations
                         {
                             Id = 3,
                             ContentTypeId = 2,
-                            CreatedAt = new DateTime(2026, 2, 14, 13, 15, 24, 912, DateTimeKind.Utc).AddTicks(4251),
+                            CreatedAt = new DateTime(2026, 2, 23, 4, 5, 49, 844, DateTimeKind.Utc).AddTicks(4058),
                             Data = System.Text.Json.JsonDocument.Parse("{\"title\":\"Getting Started with CMaaS\",\"content\":\"This is a sample blog post about CMaaS.\",\"author\":\"Admin\",\"publishDate\":\"2023-01-01\"}", new System.Text.Json.JsonDocumentOptions()),
                             IsVisible = true,
                             TenantId = 1
@@ -116,7 +116,7 @@ namespace CMaaS.Backend.Migrations
                         {
                             Id = 4,
                             ContentTypeId = 3,
-                            CreatedAt = new DateTime(2026, 2, 14, 13, 15, 24, 912, DateTimeKind.Utc).AddTicks(4283),
+                            CreatedAt = new DateTime(2026, 2, 23, 4, 5, 49, 844, DateTimeKind.Utc).AddTicks(4092),
                             Data = System.Text.Json.JsonDocument.Parse("{\"name\":\"Tablet\",\"price\":299.99,\"stock\":50}", new System.Text.Json.JsonDocumentOptions()),
                             IsVisible = true,
                             TenantId = 2
@@ -203,7 +203,7 @@ namespace CMaaS.Backend.Migrations
                         {
                             Id = 1,
                             ApiKey = "983d308bd9f340df956c8fedcdf9476c",
-                            CreatedAt = new DateTime(2026, 2, 14, 13, 15, 24, 912, DateTimeKind.Utc).AddTicks(3657),
+                            CreatedAt = new DateTime(2026, 2, 23, 4, 5, 49, 844, DateTimeKind.Utc).AddTicks(3380),
                             Name = "Sample Tenant 1",
                             PlanType = 0
                         },
@@ -211,7 +211,7 @@ namespace CMaaS.Backend.Migrations
                         {
                             Id = 2,
                             ApiKey = "abc123def456ghi789jkl012mno345",
-                            CreatedAt = new DateTime(2026, 2, 14, 13, 15, 24, 912, DateTimeKind.Utc).AddTicks(3659),
+                            CreatedAt = new DateTime(2026, 2, 23, 4, 5, 49, 844, DateTimeKind.Utc).AddTicks(3381),
                             Name = "Sample Tenant 2",
                             PlanType = 1
                         });
@@ -229,13 +229,28 @@ namespace CMaaS.Backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("EmailVerificationToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("EmailVerificationTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsEmailVerified")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
@@ -255,6 +270,7 @@ namespace CMaaS.Backend.Migrations
                             Id = 1,
                             Email = "admin@sampletenant1.com",
                             FullName = "Admin User",
+                            IsEmailVerified = false,
                             PasswordHash = "$2a$11$examplehashedpassword",
                             Role = 0,
                             TenantId = 1
@@ -264,6 +280,7 @@ namespace CMaaS.Backend.Migrations
                             Id = 2,
                             Email = "user@sampletenant1.com",
                             FullName = "Regular User",
+                            IsEmailVerified = false,
                             PasswordHash = "$2a$11$examplehashedpassword",
                             Role = 1,
                             TenantId = 1
@@ -273,6 +290,7 @@ namespace CMaaS.Backend.Migrations
                             Id = 3,
                             Email = "admin@sampletenant2.com",
                             FullName = "Admin User 2",
+                            IsEmailVerified = false,
                             PasswordHash = "$2a$11$examplehashedpassword",
                             Role = 0,
                             TenantId = 2

@@ -42,5 +42,33 @@ namespace CMaaS.Backend.Controllers
 
             return Ok(new { token = result.Data });
         }
+
+        // Verify email with token
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail(VerifyEmailRequestDto request)
+        {
+            var result = await _authService.VerifyEmailAsync(request);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return Ok(new { message = result.Data });
+        }
+
+        // Resend verification email
+        [HttpPost("resend-verification-email")]
+        public async Task<IActionResult> ResendVerificationEmail(ResendVerificationEmailDto request)
+        {
+            var result = await _authService.ResendVerificationEmailAsync(request);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return Ok(new { message = result.Data });
+        }
     }
 }

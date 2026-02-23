@@ -11,5 +11,11 @@ namespace CMaaS.Backend.Services.Interfaces
 
         // Authenticates a user and generates a JWT token
         Task<ServiceResult<string>> LoginAsync(UserDto request);
+
+        // Verify user email with token
+        Task<ServiceResult<string>> VerifyEmailAsync(VerifyEmailRequestDto request);
+
+        // Resend verification email
+        Task<ServiceResult<string>> ResendVerificationEmailAsync(ResendVerificationEmailDto request);
     }
 }
