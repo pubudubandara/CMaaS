@@ -102,6 +102,9 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<ITenantService, TenantService>();
 
+// Email Service
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 // Content Management Services
 builder.Services.AddScoped<IContentEntryService, ContentEntryService>();
 builder.Services.AddScoped<IContentTypeService, ContentTypeService>();
